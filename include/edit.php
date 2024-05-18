@@ -4,6 +4,8 @@ $id = '';
 $name = '';
 $email = '';
 $phone = '';
+$success = '';
+
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     if (!isset($_GET['id'])) {
         header("Location:../index.php");
@@ -11,10 +13,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     }
 
     $id = $_GET['id'];
-    $sql = "SELECT * FROM clients WHERE id =$id ";
+    $sql = "SELECT * FROM clients WHERE id = :id";  // Use parameter binding
     $result = $connect->prepare($sql);
-    $result->execute();
-    $row = $result->fetchAll(PDO::FETCH_ASSOC);
+    $result->execute(['id' => $id]);
+    $row = $result->fetch(PDO::FETCH_ASSOC);
+
     if (!$row) {
         header("Location:../index.php");
         exit;
@@ -26,23 +29,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $phoneData = $row['phone'];
 } else {
     $id = $_POST['id'];
-    $name = $$_POST['name'];
+    $name = $_POST['name'];
     $email = $_POST['email'];
     $phone = $_POST['phone'];
-    do {
-        if (empty($id) || empty($name) || empty($email)) {
-            $errorMessage = "all the are reqired";
-            break;
-        }
-        $sql = "UPDATE clients
-        SET name=$name ,email=$email 
-        WHERE id=$id
-        ";
+
+    if (empty($id) || empty($name) || empty($email)) {
+        $errorMessage = "All fields are required.";
+    } else {
+        $sql = "UPDATE clients SET name = :name, email = :email WHERE id = :id";  // Use parameter binding
         $update = $connect->prepare($sql);
-        $update->execute();
-    } while (false);
+        $update->execute(['id' => $id, 'name' => $name, 'email' => $email]);
+        $success = 'YOUR DETAILS ARE UPDATES';
+    }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -54,8 +55,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 </head>
 
 <body>
+    <div class="alert alert-success" role="alert">
+        <?php echo $success;
+        ?>
+    </div>
     <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post" class="m-3">
-        <input type="hidden" value="<?php echo $id; ?>">
+        <input type="hidden" name="id" value="<?php echo $id; ?>">
         <label for="name">
             name
         </label>
@@ -67,7 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
             <label for="phone">phone</label>
             <input type="number" name="phone" class="form-control" required>
         </div>
-        <input type="submit" class="btn btn-success" value="submit">
+        <input type="submit" class="btn btn-success" value="update">
+
     </form> <button class="m-3" type="button">exit</button>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
